@@ -1,0 +1,840 @@
+"use strict";
+
+const $ = id => document.getElementById(id);
+
+const STORAGE = {
+  stats: "procheckers_v2_stats",
+  settings: "procheckers_v2_settings"
+};
+
+const defaultSettings = {
+  sound: true,
+  hints: true,
+  confirmRestart: true
+};
+
+function loadJSON(key, fallback) {
+  try {
+    const value = localStorage.getItem(key);
+    return value ? { ...fallback, ...JSON.parse(value) } : JSON.parse(JSON.stringify(fallback));
+  } catch {
+    return JSON.parse(JSON.stringify(fallback));
+  }
+}
+
+let settings = loadJSON(STORAGE.settings, defaultSettings);
+
+let records = loadJSON(STORAGE.stats, {
+  played: 0,
+  wins: 0,
+  losses: 0,
+  draws: 0,
+  history: []
+});
+
+let board = [];
+let turn = "red";
+let mode = "ai";
+let difficulty = "normal";
+let selected = null;
+let legalTargets = [];
+let forcedPiece = null;
+let gameOver = false;
+let aiBusy = false;
+let moveNumber = 1;
+let snapshots = [];
+let matchToken = 0;
+let audioContext = null;
+
+function saveSettings() {
+  localStorage.setItem(STORAGE.settings, JSON.stringify(settings));
+}
+
+function saveRecords() {
+  localStorage.setItem(STORAGE.stats, JSON.stringify(records));
+}
+
+function showScreen(id) {
+  document.querySelectorAll(".screen").forEach(screen => {
+    screen.classList.remove("active");
+  });
+
+  $(id).classList.add("active");
+}
+
+function createBoard() {
+  const b = Array.from({ length: 8 }, () => Array(8).fill(null));
+
+  for (let r = 0; r < 3; r++) {
+    for (let c = 0; c < 8; c++) {
+      if ((r + c) % 2 === 1) {
+        b[r][c] = { color: "black", king: false };
+      }
+    }
+  }
+
+  for (let r = 5; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      if ((r + c) % 2 === 1) {
+        b[r][c] = { color: "red", king: false };
+      }
+    }
+  }
+
+  return b;
+}
+
+function inside(r, c) {
+  return r >= 0 && r < 8 && c >= 0 && c < 8;
+}
+
+function cloneBoard(b) {
+  return b.map(row => row.map(piece => piece ? { ...piece } : null));
+}
+
+function directions(piece) {
+  if (piece.king) {
+    return [[-1, -1], [-1, 1], [1, -1], [1, 1]];
+  }
+
+  return piece.color === "red"
+    ? [[-1, -1], [-1, 1]]
+    : [[1, -1], [1, 1]];
+}
+
+function getCapturesForPiece(b, r, c) {
+  const piece = b[r][c];
+  if (!piece) return [];
+
+  const moves = [];
+
+  for (const [dr, dc] of directions(piece)) {
+    const mr = r + dr;
+    const mc = c + dc;
+    const tr = r + dr * 2;
+    const tc = c + dc * 2;
+
+    if (!inside(mr, mc) || !inside(tr, tc)) continue;
+
+    const middle = b[mr][mc];
+
+    if (
+      middle &&
+      middle.color !== piece.color &&
+      !b[tr][tc]
+    ) {
+      moves.push({
+        from: [r, c],
+        to: [tr, tc],
+        capture: [mr, mc]
+      });
+    }
+  }
+
+  return moves;
+}
+
+function getSimpleMovesForPiece(b, r, c) {
+  const piece = b[r][c];
+  if (!piece) return [];
+
+  const moves = [];
+
+  for (const [dr, dc] of directions(piece)) {
+    const tr = r + dr;
+    const tc = c + dc;
+
+    if (inside(tr, tc) && !b[tr][tc]) {
+      moves.push({
+        from: [r, c],
+        to: [tr, tc],
+        capture: null
+      });
+    }
+  }
+
+  return moves;
+}
+
+function getAllMoves(b, color, onlyFrom = null) {
+  const captures = [];
+  const simple = [];
+
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      const piece = b[r][c];
+
+      if (!piece || piece.color !== color) continue;
+
+      if (
+        onlyFrom &&
+        (onlyFrom[0] !== r || onlyFrom[1] !== c)
+      ) {
+        continue;
+      }
+
+      captures.push(...getCapturesForPiece(b, r, c));
+      simple.push(...getSimpleMovesForPiece(b, r, c));
+    }
+  }
+
+  // Captures are mandatory.
+  return captures.length ? captures : simple;
+}
+
+function getLegalMovesForTurn() {
+  return getAllMoves(board, turn, forcedPiece);
+}
+
+function saveSnapshot() {
+  snapshots.push({
+    board: cloneBoard(board),
+    turn,
+    moveNumber,
+    forcedPiece: forcedPiece ? [...forcedPiece] : null,
+    gameOver
+  });
+
+  if (snapshots.length > 80) snapshots.shift();
+}
+
+function movePiece(b, move) {
+  const [fr, fc] = move.from;
+  const [tr, tc] = move.to;
+  const piece = b[fr][fc];
+
+  if (!piece) return null;
+
+  b[tr][tc] = piece;
+  b[fr][fc] = null;
+
+  if (move.capture) {
+    const [cr, cc] = move.capture;
+    b[cr][cc] = null;
+  }
+
+  // Promote to king when reaching the opposite end.
+  if (
+    (piece.color === "red" && tr === 0) ||
+    (piece.color === "black" && tr === 7)
+  ) {
+    piece.king = true;
+  }
+
+  return piece;
+}
+
+function startGame() {
+  mode = $("homeMode").value;
+  difficulty = $("homeDifficulty").value;
+
+  matchToken++;
+  board = createBoard();
+  turn = "red";
+  selected = null;
+  legalTargets = [];
+  forcedPiece = null;
+  gameOver = false;
+  aiBusy = false;
+  moveNumber = 1;
+  snapshots = [];
+
+  $("redName").textContent = "Red";
+  $("blackName").textContent = mode === "ai" ? "AI" : "Black";
+
+  showScreen("game");
+  render();
+
+  setStatus("Red's turn — choose a piece.");
+
+  $("hint").textContent = mode === "ai"
+    ? "You are Red. The AI controls Black."
+    : "Two-player mode: pass the device after each turn.";
+}
+
+function setStatus(message) {
+  const status = $("status");
+  const strong = document.createElement("strong");
+  strong.textContent = message;
+  status.replaceChildren(strong);
+}
+
+function escapeHTML(text) {
+  return String(text).replace(/[&<>"']/g, ch => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  })[ch]);
+}
+
+function countPieces(color) {
+  return board.flat().filter(piece => piece && piece.color === color).length;
+}
+
+function render() {
+  const element = $("board");
+  element.innerHTML = "";
+
+  const moves = getLegalMovesForTurn();
+  legalTargets = selected
+    ? moves.filter(move =>
+        move.from[0] === selected[0] &&
+        move.from[1] === selected[1]
+      )
+    : [];
+
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      const square = document.createElement("button");
+      square.type = "button";
+      square.className = "square " +
+        ((r + c) % 2 ? "dark" : "light");
+
+      square.setAttribute("aria-label", `Row ${r + 1}, column ${c + 1}`);
+
+      if (selected && selected[0] === r && selected[1] === c) {
+        square.classList.add("selected");
+      }
+
+      const target = legalTargets.find(move =>
+        move.to[0] === r && move.to[1] === c
+      );
+
+      if (target && settings.hints) {
+        square.classList.add("target");
+
+        if (target.capture) {
+          square.classList.add("capture-target");
+        }
+      }
+
+      const piece = board[r][c];
+
+      if (piece) {
+        const disk = document.createElement("div");
+        disk.className = "piece " + piece.color +
+          (piece.king ? " king" : "");
+        square.appendChild(disk);
+      }
+
+      square.addEventListener("click", () => handleSquare(r, c));
+      element.appendChild(square);
+    }
+  }
+
+  $("redCount").textContent = countPieces("red") + " pieces";
+  $("blackCount").textContent = countPieces("black") + " pieces";
+
+  $("redPlayer").classList.toggle(
+    "active-player",
+    turn === "red" && !gameOver
+  );
+
+  $("blackPlayer").classList.toggle(
+    "active-player",
+    turn === "black" && !gameOver
+  );
+
+  $("undoBtn").disabled = snapshots.length === 0 || aiBusy;
+  $("undoBtn").style.opacity = $("undoBtn").disabled ? ".45" : "1";
+
+  $("soundBtn").textContent = settings.sound ? "🔊 Sound" : "🔇 Muted";
+}
+
+function handleSquare(r, c) {
+  if (
+    gameOver ||
+    aiBusy ||
+    (mode === "ai" && turn === "black")
+  ) {
+    return;
+  }
+
+  const piece = board[r][c];
+  const moves = getLegalMovesForTurn();
+
+  if (selected) {
+    const chosen = moves.find(move =>
+      move.from[0] === selected[0] &&
+      move.from[1] === selected[1] &&
+      move.to[0] === r &&
+      move.to[1] === c
+    );
+
+    if (chosen) {
+      performMove(chosen);
+      return;
+    }
+  }
+
+  if (piece && piece.color === turn) {
+    if (
+      forcedPiece &&
+      (forcedPiece[0] !== r || forcedPiece[1] !== c)
+    ) {
+      setStatus("Continue jumping with the same piece.");
+      return;
+    }
+
+    const pieceMoves = moves.filter(move =>
+      move.from[0] === r && move.from[1] === c
+    );
+
+    if (!pieceMoves.length) {
+      setStatus(
+        moves.some(move => move.capture)
+          ? "A capture is available. You must capture."
+          : "That piece has no legal move."
+      );
+
+      selected = null;
+    } else {
+      selected = [r, c];
+
+      setStatus(
+        pieceMoves.some(move => move.capture)
+          ? "Capture an opponent's piece!"
+          : (turn === "red" ? "Red" : "Black") + "'s turn."
+      );
+    }
+  } else {
+    selected = null;
+  }
+
+  render();
+}
+
+function performMove(move) {
+  if (gameOver) return;
+
+  saveSnapshot();
+
+  movePiece(board, move);
+  selected = null;
+  legalTargets = [];
+
+  playSound(move.capture ? "capture" : "move");
+
+  if (move.capture) {
+    const [r, c] = move.to;
+    const nextCaptures = getCapturesForPiece(board, r, c);
+
+    // Continue a multi-jump before changing turns.
+    if (nextCaptures.length) {
+      forcedPiece = [r, c];
+      selected = [r, c];
+      render();
+
+      setStatus(
+        (turn === "red" ? "Red" : "Black") +
+        " must continue capturing."
+      );
+
+      if (mode === "ai" && turn === "black") {
+        scheduleAI();
+      }
+
+      return;
+    }
+  }
+
+  forcedPiece = null;
+  turn = turn === "red" ? "black" : "red";
+  moveNumber++;
+
+  render();
+
+  const available = getAllMoves(board, turn);
+
+  if (!available.length) {
+    finishGame(turn === "red" ? "black" : "red");
+    return;
+  }
+
+  setStatus((turn === "red" ? "Red" : "Black") + "'s turn.");
+
+  if (mode === "ai" && turn === "black") {
+    scheduleAI();
+  }
+}
+
+function finishGame(winner) {
+  if (gameOver) return;
+
+  gameOver = true;
+  aiBusy = false;
+  render();
+
+  const result = mode === "ai"
+    ? (winner === "red" ? "You win!" : "AI wins")
+    : (winner === "red" ? "Red wins" : "Black wins");
+
+  setStatus("🏆 " + result);
+  $("hint").textContent = "Start another match whenever you're ready.";
+
+  records.played++;
+
+  if (mode === "ai") {
+    if (winner === "red") records.wins++;
+    else records.losses++;
+  } else {
+    if (winner === "red") records.wins++;
+    else records.losses++;
+  }
+
+  records.history.unshift({
+    result,
+    mode,
+    difficulty: mode === "ai" ? difficulty : "local",
+    date: new Date().toLocaleDateString()
+  });
+
+  records.history = records.history.slice(0, 20);
+  saveRecords();
+}
+
+function scheduleAI() {
+  if (gameOver || mode !== "ai" || turn !== "black") return;
+
+  aiBusy = true;
+  render();
+  setStatus("AI is thinking…");
+
+  const token = matchToken;
+
+  setTimeout(() => {
+    if (token !== matchToken || gameOver || turn !== "black") {
+      aiBusy = false;
+      return;
+    }
+
+    const moves = getAllMoves(board, "black", forcedPiece);
+
+    if (!moves.length) {
+      aiBusy = false;
+      finishGame("red");
+      return;
+    }
+
+    const move = chooseAIMove(moves);
+    aiBusy = false;
+
+    if (move) {
+      performMove(move);
+    }
+  }, difficulty === "hard" ? 450 : 300);
+}
+
+function shuffle(array) {
+  const result = array.slice();
+
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+
+  return result;
+}
+
+function chooseAIMove(moves) {
+  if (difficulty === "easy") {
+    return moves[Math.floor(Math.random() * moves.length)];
+  }
+
+  const depth = difficulty === "hard" ? 5 : 3;
+  let bestScore = -Infinity;
+  let choices = [];
+
+  for (const move of shuffle(moves)) {
+    const next = cloneBoard(board);
+    movePiece(next, move);
+
+    const continues = move.capture &&
+      getCapturesForPiece(next, move.to[0], move.to[1]).length > 0;
+
+    const score = continues
+      ? search(next, "black", depth, -Infinity, Infinity, move.to, 1)
+      : -search(next, "red", depth - 1, -Infinity, Infinity, null, 1);
+
+    if (score > bestScore) {
+      bestScore = score;
+      choices = [move];
+    } else if (score === bestScore) {
+      choices.push(move);
+    }
+  }
+
+  return choices[0] || moves[0];
+}
+
+function search(b, color, depth, alpha, beta, forced = null, ply = 0) {
+  const moves = getAllMoves(b, color, forced);
+
+  if (!moves.length) {
+    return color === "black" ? 10000 - ply : -10000 + ply;
+  }
+
+  if (depth <= 0) {
+    return evaluateBoard(b);
+  }
+
+  let best = color === "black" ? -Infinity : Infinity;
+
+  for (const move of moves) {
+    const next = cloneBoard(b);
+    movePiece(next, move);
+
+    const continues = !!(
+      move.capture &&
+      getCapturesForPiece(next, move.to[0], move.to[1]).length
+    );
+
+    const nextColor = continues
+      ? color
+      : (color === "black" ? "red" : "black");
+
+    const nextForced = continues ? move.to : null;
+    const nextDepth = continues ? depth : depth - 1;
+
+    const score = search(
+      next,
+      nextColor,
+      nextDepth,
+      alpha,
+      beta,
+      nextForced,
+      ply + 1
+    );
+
+    if (color === "black") {
+      best = Math.max(best, score);
+      alpha = Math.max(alpha, best);
+    } else {
+      best = Math.min(best, score);
+      beta = Math.min(beta, best);
+    }
+
+    if (beta <= alpha) break;
+  }
+
+  return best;
+}
+
+function evaluateBoard(b) {
+  let score = 0;
+
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      const piece = b[r][c];
+      if (!piece) continue;
+
+      const value = piece.king ? 180 : 100;
+      const advance = piece.king
+        ? 0
+        : (piece.color === "black" ? r : 7 - r) * 3;
+
+      const center = c >= 2 && c <= 5 ? 3 : 0;
+      const total = value + advance + center;
+
+      score += piece.color === "black" ? total : -total;
+    }
+  }
+
+  return score;
+}
+
+function undoMove() {
+  if (!snapshots.length || aiBusy) return;
+
+  // Undo the AI response and the player's move when possible.
+  const steps = mode === "ai"
+    ? Math.min(2, snapshots.length)
+    : 1;
+
+  let state = null;
+
+  for (let i = 0; i < steps; i++) {
+    state = snapshots.pop();
+  }
+
+  if (!state) return;
+
+  matchToken++;
+  board = cloneBoard(state.board);
+  turn = state.turn;
+  moveNumber = state.moveNumber;
+  forcedPiece = state.forcedPiece ? [...state.forcedPiece] : null;
+  gameOver = false;
+  selected = null;
+  legalTargets = [];
+  aiBusy = false;
+
+  render();
+  setStatus((turn === "red" ? "Red" : "Black") + "'s turn.");
+}
+
+function restartGame() {
+  if (
+    settings.confirmRestart &&
+    !confirm("Restart this match?")
+  ) {
+    return;
+  }
+
+  startGame();
+}
+
+function playSound(type) {
+  if (!settings.sound) return;
+
+  try {
+    audioContext = audioContext ||
+      new (window.AudioContext || window.webkitAudioContext)();
+
+    if (audioContext.state === "suspended") {
+      audioContext.resume();
+    }
+
+    const oscillator = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+
+    oscillator.connect(gain);
+    gain.connect(audioContext.destination);
+
+    oscillator.type = "sine";
+    oscillator.frequency.value = type === "capture" ? 260 : 420;
+
+    gain.gain.setValueAtTime(0.045, audioContext.currentTime);
+    gain.gain.exponentialRampToValueAtTime(
+      0.001,
+      audioContext.currentTime + 0.09
+    );
+
+    oscillator.start();
+    oscillator.stop(audioContext.currentTime + 0.1);
+  } catch (error) {
+    // Sound may be unavailable in some browsers.
+  }
+}
+
+function updateStats() {
+  $("statPlayed").textContent = records.played;
+  $("statWins").textContent = records.wins;
+
+  $("statRate").textContent = records.played
+    ? Math.round(records.wins / records.played * 100) + "%"
+    : "0%";
+
+  const history = $("history");
+  history.innerHTML = "";
+
+  if (!records.history.length) {
+    const message = document.createElement("p");
+    message.className = "subtitle";
+    message.textContent = "No matches yet. Play your first game!";
+    history.appendChild(message);
+    return;
+  }
+
+  records.history.forEach(item => {
+    const row = document.createElement("div");
+    row.className = "history-item";
+
+    const result = document.createElement("span");
+    result.textContent = item.result;
+
+    result.className = item.result.toLowerCase().includes("win")
+      ? "result-win"
+      : item.result.toLowerCase().includes("draw")
+        ? "result-draw"
+        : "result-loss";
+
+    const details = document.createElement("small");
+    details.style.color = "var(--muted)";
+    details.textContent =
+      `${item.mode === "ai" ? "AI" : "Local"} · ` +
+      `${item.difficulty} · ${item.date}`;
+
+    row.append(result, details);
+    history.appendChild(row);
+  });
+}
+
+function applySettings() {
+  $("soundToggle").checked = settings.sound;
+  $("hintsToggle").checked = settings.hints;
+  $("confirmToggle").checked = settings.confirmRestart;
+
+  if ($("game").classList.contains("active")) {
+    render();
+  }
+}
+
+// Event listeners
+$("startBtn").addEventListener("click", startGame);
+
+$("homeBtn").addEventListener("click", () => {
+  matchToken++;
+  aiBusy = false;
+  showScreen("home");
+});
+
+document.querySelectorAll("[data-home]").forEach(button => {
+  button.addEventListener("click", () => showScreen("home"));
+});
+
+$("statsBtn").addEventListener("click", () => {
+  updateStats();
+  showScreen("stats");
+});
+
+$("settingsBtn").addEventListener("click", () => {
+  applySettings();
+  showScreen("settings");
+});
+
+$("restartBtn").addEventListener("click", restartGame);
+$("undoBtn").addEventListener("click", undoMove);
+
+$("soundBtn").addEventListener("click", () => {
+  settings.sound = !settings.sound;
+  saveSettings();
+  applySettings();
+});
+
+$("soundToggle").addEventListener("change", event => {
+  settings.sound = event.target.checked;
+  saveSettings();
+  applySettings();
+});
+
+$("hintsToggle").addEventListener("change", event => {
+  settings.hints = event.target.checked;
+  saveSettings();
+  applySettings();
+});
+
+$("confirmToggle").addEventListener("change", event => {
+  settings.confirmRestart = event.target.checked;
+  saveSettings();
+});
+
+$("clearHistoryBtn").addEventListener("click", () => {
+  if (confirm("Clear all saved match records?")) {
+    records = {
+      played: 0,
+      wins: 0,
+      losses: 0,
+      draws: 0,
+      history: []
+    };
+
+    saveRecords();
+    updateStats();
+  }
+});
+
+// Initialize the app.
+applySettings();
