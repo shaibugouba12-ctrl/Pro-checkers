@@ -2,171 +2,342 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PRO CHECKERS</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#10131c">
+<title>Pro Checkers V2</title>
 
 <style>
 :root {
-  --bg: #10131b;
-  --panel: #1b202c;
-  --gold: #f2c66d;
-  --text: #f5f5f7;
-  --muted: #a7adbb;
+  --bg:#10131c;
+  --panel:#1a2030;
+  --gold:#f5c76a;
+  --text:#f7f4ed;
+  --muted:#9da7ba;
+  --light:#f0d7ac;
+  --dark:#74482f;
+  --red:#f04f5f;
 }
-* { box-sizing: border-box; }
+* { box-sizing:border-box; }
 body {
-  margin: 0;
-  padding: 18px 12px 32px;
-  color: var(--text);
-  background: radial-gradient(ellipse at top, #303547, var(--bg) 65%);
-  font-family: system-ui, Arial, sans-serif;
+  margin:0;
+  min-height:100vh;
+  background:radial-gradient(ellipse at top,#26314a,var(--bg) 65%);
+  color:var(--text);
+  font-family:system-ui,-apple-system,Segoe UI,sans-serif;
 }
-.app { max-width: 680px; margin: auto; }
-header { text-align: center; margin: 10px 0 20px; }
+button,select { font:inherit; }
+button { cursor:pointer; }
+.app {
+  width:min(100%,650px);
+  margin:auto;
+  padding:18px 14px 35px;
+}
+header {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  margin-bottom:22px;
+}
 .logo {
-  color: var(--gold);
-  font-size: 12px;
-  letter-spacing: 5px;
-  font-weight: 900;
+  font-weight:950;
+  font-size:21px;
+  letter-spacing:1px;
 }
-h1 { margin: 5px 0; font-size: clamp(28px, 7vw, 43px); }
-.subtitle { color: var(--muted); font-size: 13px; }
+.logo span { color:var(--gold); }
+.badge {
+  color:var(--gold);
+  border:1px solid #655333;
+  padding:6px 10px;
+  border-radius:30px;
+  font-size:11px;
+  font-weight:800;
+}
+.screen { display:none; }
+.screen.active { display:block; }
+.hero {
+  text-align:center;
+  padding:25px 12px 20px;
+}
+.hero .icon {
+  font-size:66px;
+  filter:drop-shadow(0 12px 20px #0008);
+}
+h1 {
+  font-size:clamp(31px,8vw,46px);
+  margin:8px 0;
+  line-height:1.1;
+  letter-spacing:-1.5px;
+}
+h1 span { color:var(--gold); }
+.subtitle {
+  color:var(--muted);
+  line-height:1.6;
+  font-size:14px;
+}
 .panel {
-  background: linear-gradient(145deg, #232a39, #171b25);
-  border: 1px solid #343b4c;
-  border-radius: 18px;
-  padding: 14px;
-  margin-bottom: 14px;
-  box-shadow: 0 10px 28px #0003;
+  background:linear-gradient(145deg,#20283a,#171c29);
+  border:1px solid #ffffff12;
+  border-radius:20px;
+  padding:18px;
+  margin:14px 0;
+  box-shadow:0 14px 35px #0002;
 }
-.toolbar { display: flex; gap: 8px; flex-wrap: wrap; }
-button, select {
-  min-height: 44px;
-  border: 1px solid #41495c;
-  border-radius: 10px;
-  background: #292f3e;
-  color: var(--text);
-  padding: 10px 13px;
-  font: inherit;
-  font-size: 13px;
-  cursor: pointer;
+.section-title {
+  font-size:12px;
+  letter-spacing:1.5px;
+  color:var(--muted);
+  font-weight:850;
+  margin-bottom:12px;
 }
-button:focus-visible, select:focus-visible {
-  outline: 3px solid var(--gold);
-  outline-offset: 2px;
+.btn {
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:9px;
+  width:100%;
+  border:0;
+  border-radius:13px;
+  padding:14px 16px;
+  font-weight:850;
+  margin-top:10px;
+  transition:transform .15s,filter .15s;
 }
-button.active, button.primary {
-  background: var(--gold);
-  color: #211a0d;
-  border-color: var(--gold);
-  font-weight: 800;
+.btn:active { transform:scale(.98); }
+.primary {
+  background:linear-gradient(135deg,#ffdc8a,#e7ad45);
+  color:#292014;
+  box-shadow:0 7px 20px #f5c76a20;
 }
-button:disabled { opacity: .4; cursor: not-allowed; }
-.toolbar button { flex: 1; }
-.statusrow {
-  display: flex; align-items: center; justify-content: space-between;
-  gap: 8px; margin-bottom: 12px; flex-wrap: wrap;
+.secondary {
+  color:var(--text);
+  background:#ffffff0b;
+  border:1px solid #ffffff18;
 }
-.turn { display: flex; align-items: center; gap: 9px; font-weight: 800; }
-.dot { width: 13px; height: 13px; border-radius: 50%; }
-.dot.red { background: #ef4e58; }
-.dot.black { background: #d8dce4; }
-.pill {
-  border: 1px solid #444c5f;
-  padding: 5px 9px;
-  border-radius: 30px;
-  color: var(--muted);
-  font-size: 11px;
+.danger {
+  background:#f04f5f18;
+  border:1px solid #f04f5f55;
+  color:#ff9ca5;
+}
+.row {
+  display:flex;
+  gap:10px;
+}
+.row > * { flex:1; min-width:0; }
+select {
+  width:100%;
+  background:#111724;
+  color:white;
+  border:1px solid #ffffff22;
+  border-radius:11px;
+  padding:12px 8px;
+  outline:none;
+}
+label {
+  display:block;
+  font-size:12px;
+  color:var(--muted);
+  margin-bottom:7px;
+}
+.stats {
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:9px;
+  margin:15px 0;
+}
+.stat {
+  background:#ffffff08;
+  border:1px solid #ffffff0c;
+  border-radius:14px;
+  text-align:center;
+  padding:14px 5px;
+}
+.stat strong {
+  display:block;
+  font-size:25px;
+  color:var(--gold);
+}
+.stat small { color:var(--muted); font-size:11px; }
+.game-top {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:8px;
+}
+.game-top h2 { margin:0; font-size:22px; }
+.small-btn {
+  background:#ffffff0b;
+  border:1px solid #ffffff18;
+  color:white;
+  border-radius:10px;
+  padding:9px 12px;
+  font-weight:700;
+}
+.status {
+  margin:14px 0;
+  background:#ffffff08;
+  border:1px solid #ffffff12;
+  border-radius:13px;
+  padding:13px;
+  text-align:center;
+}
+.status strong { color:var(--gold); }
+.players {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin:12px 0;
+}
+.player {
+  padding:12px;
+  border-radius:13px;
+  background:#ffffff08;
+  border:1px solid #ffffff12;
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.player.active-player {
+  border-color:var(--gold);
+  background:#f5c76a12;
+}
+.piece-dot {
+  width:26px;
+  height:26px;
+  border-radius:50%;
+  border:3px solid #ffffff55;
+  flex-shrink:0;
+}
+.piece-dot.red { background:linear-gradient(145deg,#ff7882,#b91730); }
+.piece-dot.black { background:linear-gradient(145deg,#657084,#171c26); }
+.player small { display:block; color:var(--muted); margin-top:3px; }
+.board-wrap {
+  width:100%;
+  padding:8px;
+  border-radius:17px;
+  background:linear-gradient(135deg,#c99a63,#684129 45%,#b9824b);
+  box-shadow:0 15px 35px #0005,inset 0 0 0 2px #f8d9a433;
 }
 .board {
-  width: 100%;
-  max-width: 520px;
-  margin: auto;
-  aspect-ratio: 1;
-  display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  border: 6px solid #533522;
-  border-radius: 5px;
-  overflow: hidden;
-  box-shadow: 0 14px 30px #0007;
+  display:grid;
+  grid-template-columns:repeat(8,minmax(0,1fr));
+  width:100%;
+  aspect-ratio:1;
+  overflow:hidden;
+  border:2px solid #3c251b;
+  border-radius:5px;
 }
 .square {
-  position: relative;
-  border: 0;
-  border-radius: 0;
-  padding: 0;
-  min-height: 0;
-  aspect-ratio: 1;
-  display: grid;
-  place-items: center;
+  min-width:0;
+  min-height:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  position:relative;
+  border:0;
+  padding:0;
 }
-.light { background: #e7d3ad; }
-.dark {
-  background: repeating-linear-gradient(
-    135deg, #765039, #765039 5px, #68442f 5px, #68442f 10px
-  );
+.square.light { background:var(--light); }
+.square.dark { background:var(--dark); }
+.square.selected {
+  box-shadow:inset 0 0 0 4px #ffe36c;
 }
-.square.selected { box-shadow: inset 0 0 0 4px #ffdf55; }
-.square.legal::after {
-  content: "";
-  width: 24%; height: 24%; border-radius: 50%;
-  background: #d6f7a0; border: 2px solid #42622b;
-  position: absolute; z-index: 1;
+.square.target::after {
+  content:"";
+  position:absolute;
+  width:25%;
+  aspect-ratio:1;
+  border-radius:50%;
+  background:#ffe477d9;
+  box-shadow:0 0 0 4px #fff2;
 }
-.square.capture::after {
-  width: 43%; height: 43%; background: transparent;
-  border: 3px solid #f5df79;
+.square.capture-target::after {
+  width:38%;
+  background:#ff6877;
+  box-shadow:0 0 0 4px #ff687733;
 }
 .piece {
-  width: 79%; height: 79%;
-  border-radius: 50%;
-  display: grid; place-items: center;
-  position: relative; z-index: 2;
-  font-size: clamp(14px, 4.7vw, 27px);
-  font-weight: 900;
-  border: 2px solid #0008;
-  box-shadow: inset 0 4px 3px #ffffff6b,
-              inset 0 -6px 5px #0009, 0 3px 3px #0008;
-  transition: transform .12s ease;
+  width:82%;
+  height:82%;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  position:relative;
+  z-index:1;
+  border:3px solid #ffffff35;
+  box-shadow:inset 0 -5px 0 #0004,0 3px 3px #0006;
+  transition:transform .16s;
+  animation:appear .16s ease-out;
 }
-.square.selected .piece { transform: scale(1.07); }
 .piece.red {
-  background: radial-gradient(circle at 33% 25%, #ff8c8c, #d32e3b 58%, #791723);
-  color: #fff4df;
+  background:radial-gradient(circle at 32% 25%,#ff9a9f,#e33148 53%,#951b2c);
 }
 .piece.black {
-  background: radial-gradient(circle at 33% 25%, #777d8b, #303541 55%, #11141b);
-  color: var(--gold);
+  background:radial-gradient(circle at 32% 25%,#8a94a4,#343d4d 55%,#11151d);
 }
-.legend {
-  display: flex; justify-content: center; gap: 16px;
-  margin-top: 12px; color: var(--muted); font-size: 12px;
+.piece.king::after {
+  content:"♛";
+  font-size:clamp(15px,4.5vw,29px);
+  line-height:1;
+  color:#ffdf87;
+  text-shadow:0 2px 2px #0009;
 }
-.legend span { display: flex; align-items: center; gap: 6px; }
-.message {
-  min-height: 24px; text-align: center; margin-top: 12px;
-  color: var(--gold); font-size: 13px; font-weight: 700;
+.square:active .piece { transform:scale(.92); }
+@keyframes appear {
+  from { transform:scale(.7); opacity:.5; }
+  to { transform:scale(1); opacity:1; }
 }
-.stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
-.stat {
-  background: #121722; border: 1px solid #343b4c;
-  border-radius: 12px; text-align: center; padding: 12px 5px;
+.controls {
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:8px;
+  margin-top:12px;
 }
-.stat strong { display: block; font-size: 23px; }
-.stat small { color: var(--muted); font-size: 10px; }
-.sectiontitle { margin: 0 0 11px; font-size: 14px; }
-.options { display: flex; gap: 9px; align-items: center; flex-wrap: wrap; }
-.options label { color: var(--muted); font-size: 12px; }
-.help { color: var(--muted); font-size: 12px; line-height: 1.7; }
-footer { text-align: center; color: #858c9c; font-size: 10px; padding: 12px; }
-@media (max-width: 380px) {
-  body { padding: 10px 7px; }
-  .panel { padding: 10px; }
-  .piece { border-width: 1px; }
-  button { padding: 9px 7px; }
+.controls button {
+  padding:11px 5px;
+  font-size:12px;
 }
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { transition: none !important; }
+.hint {
+  font-size:12px;
+  line-height:1.5;
+  color:var(--muted);
+  text-align:center;
+  margin:12px 0 0;
+}
+.history-item {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:8px;
+  border-bottom:1px solid #ffffff10;
+  padding:12px 0;
+  font-size:13px;
+}
+.history-item:last-child { border:0; }
+.result-win { color:#80e2a6; }
+.result-loss { color:#ff9ca5; }
+.result-draw { color:var(--gold); }
+.toggle-row {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:12px 0;
+  border-bottom:1px solid #ffffff12;
+}
+.toggle-row:last-child { border:0; }
+.toggle-row small { color:var(--muted); display:block; margin-top:4px; }
+input[type=checkbox] { width:21px; height:21px; accent-color:#f5c76a; }
+footer {
+  color:#778197;
+  text-align:center;
+  font-size:11px;
+  margin-top:25px;
+}
+@media(min-width:550px) {
+  .app { padding-top:28px; }
+  .hero { padding-top:35px; }
 }
 </style>
 </head>
@@ -174,457 +345,729 @@ footer { text-align: center; color: #858c9c; font-size: 10px; padding: 12px; }
 <body>
 <div class="app">
   <header>
-    <div class="logo">STRATEGY • PRECISION • VICTORY</div>
-    <h1>♟ PRO CHECKERS</h1>
-    <div class="subtitle">Think ahead. Make your move. Claim victory.</div>
+    <div class="logo">PRO <span>CHECKERS</span></div>
+    <div class="badge">V2.0 • OFFLINE</div>
   </header>
 
-  <section class="panel">
-    <h2 class="sectiontitle">GAME MODE</h2>
-    <div class="toolbar">
-      <button id="aiMode" class="active">🤖 VS COMPUTER</button>
-      <button id="localMode">👥 TWO PLAYERS</button>
-    </div>
-  </section>
-
-  <section class="panel">
-    <div class="statusrow">
-      <div class="turn"><span id="turnDot" class="dot red"></span><span id="turnText">RED'S TURN</span></div>
-      <span id="modePill" class="pill">VS COMPUTER</span>
+  <section id="home" class="screen active">
+    <div class="hero">
+      <div class="icon">♟️</div>
+      <h1>THINK.<br><span>MOVE.</span> WIN.</h1>
+      <p class="subtitle">A classic strategy game, rebuilt for your next challenge.</p>
     </div>
 
-    <div id="board" class="board" aria-label="Checkers board"></div>
-    <div class="legend">
-      <span><i class="dot red"></i> Red</span>
-      <span><i class="dot black"></i> Black</span>
-      <span>♛ King</span>
-    </div>
-    <div id="message" class="message" aria-live="polite">Choose a red piece to begin.</div>
-  </section>
-
-  <section class="panel">
-    <h2 class="sectiontitle">MATCH STATISTICS</h2>
-    <div class="stats">
-      <div class="stat"><strong id="redCount">12</strong><small>RED PIECES</small></div>
-      <div class="stat"><strong id="blackCount">12</strong><small>BLACK PIECES</small></div>
-      <div class="stat"><strong id="moveCount">0</strong><small>HALF-MOVES</small></div>
-    </div>
-  </section>
-
-  <section class="panel">
-    <h2 class="sectiontitle">GAME CONTROLS</h2>
-    <div class="toolbar">
-      <button id="undoBtn">↶ UNDO</button>
-      <button id="newBtn" class="primary">↻ NEW GAME</button>
-      <button id="soundBtn">🔊 SOUND ON</button>
-    </div>
-    <div class="options" style="margin-top:12px">
-      <label for="difficulty">Computer difficulty</label>
-      <select id="difficulty">
-        <option value="1">Easy</option>
-        <option value="3" selected>Normal</option>
-        <option value="5">Hard</option>
+    <div class="panel">
+      <div class="section-title">START A MATCH</div>
+      <label for="homeMode">Game mode</label>
+      <select id="homeMode">
+        <option value="ai">Play against AI</option>
+        <option value="local">Two players · same device</option>
       </select>
+      <div style="height:12px"></div>
+      <label for="homeDifficulty">AI difficulty</label>
+      <select id="homeDifficulty">
+        <option value="easy">Easy</option>
+        <option value="normal" selected>Normal</option>
+        <option value="hard">Hard</option>
+      </select>
+      <button class="btn primary" id="startBtn">▶ &nbsp; START GAME</button>
+    </div>
+
+    <div class="row">
+      <button class="btn secondary" id="statsBtn">📊 Statistics</button>
+      <button class="btn secondary" id="settingsBtn">⚙️ Settings</button>
+    </div>
+    <footer>Built for strategy lovers • Your records stay on this device</footer>
+  </section>
+
+  <section id="game" class="screen">
+    <div class="game-top">
+      <h2>Match Arena</h2>
+      <button class="small-btn" id="homeBtn">⌂ Home</button>
+    </div>
+
+    <div class="players">
+      <div class="player" id="redPlayer">
+        <div class="piece-dot red"></div>
+        <div><b id="redName">Red</b><small id="redCount">12 pieces</small></div>
+      </div>
+      <div class="player" id="blackPlayer">
+        <div class="piece-dot black"></div>
+        <div><b id="blackName">Black</b><small id="blackCount">12 pieces</small></div>
+      </div>
+    </div>
+
+    <div class="status" id="status"><strong>Red's turn</strong></div>
+
+    <div class="board-wrap">
+      <div class="board" id="board" aria-label="Checkers board"></div>
+    </div>
+
+    <div class="controls">
+      <button class="small-btn" id="undoBtn">↶ Undo</button>
+      <button class="small-btn" id="soundBtn">🔊 Sound</button>
+      <button class="small-btn" id="restartBtn">↻ Restart</button>
+    </div>
+    <p class="hint" id="hint">Select a piece, then select a highlighted square.</p>
+  </section>
+
+  <section id="stats" class="screen">
+    <div class="game-top">
+      <h2>Your Statistics</h2>
+      <button class="small-btn" data-home>⌂ Home</button>
+    </div>
+    <div class="stats">
+      <div class="stat"><strong id="statPlayed">0</strong><small>Played</small></div>
+      <div class="stat"><strong id="statWins">0</strong><small>Wins</small></div>
+      <div class="stat"><strong id="statRate">0%</strong><small>Win rate</small></div>
+    </div>
+    <div class="panel">
+      <div class="section-title">RECENT MATCHES</div>
+      <div id="history"></div>
+      <button class="btn danger" id="clearHistoryBtn">Clear match history</button>
     </div>
   </section>
 
-  <section class="panel">
-    <h2 class="sectiontitle">HOW TO PLAY</h2>
-    <div class="help">
-      • Red moves first. Tap a piece, then a highlighted square.<br>
-      • Pieces move diagonally forward on dark squares.<br>
-      • Captures are mandatory. Jump over an opponent to capture it.<br>
-      • If another capture is available after a jump, continue jumping.<br>
-      • Reach the opposite edge to become a king. Kings can move forward and backward.<br>
-      • Win by capturing all enemy pieces or blocking every legal move.
+  <section id="settings" class="screen">
+    <div class="game-top">
+      <h2>Settings</h2>
+      <button class="small-btn" data-home>⌂ Home</button>
     </div>
+    <div class="panel">
+      <div class="toggle-row">
+        <div><b>Sound effects</b><small>Moves and captures</small></div>
+        <input type="checkbox" id="soundToggle" checked>
+      </div>
+      <div class="toggle-row">
+        <div><b>Show move hints</b><small>Highlight legal destinations</small></div>
+        <input type="checkbox" id="hintsToggle" checked>
+      </div>
+      <div class="toggle-row">
+        <div><b>Confirm restart</b><small>Ask before restarting a match</small></div>
+        <input type="checkbox" id="confirmToggle" checked>
+      </div>
+    </div>
+    <p class="hint">Settings are saved on this device.</p>
   </section>
-  <footer>PRO CHECKERS • BUILT WITH HTML, CSS & JAVASCRIPT</footer>
 </div>
 
 <script>
 "use strict";
 
 const $ = id => document.getElementById(id);
-const boardEl = $("board");
-const messageEl = $("message");
 
-let board, turn, mode, selected, legalTargets, forcedPiece;
-let gameOver, history, halfMoves, soundOn;
-let aiBusy = false;
-let aiToken = 0;
-
-const directions = {
-  r: [[-1,-1],[-1,1]],
-  b: [[1,-1],[1,1]]
+const STORAGE = {
+  stats: "procheckers_v2_stats",
+  settings: "procheckers_v2_settings"
 };
 
-function makeInitialBoard() {
+const defaultSettings = {
+  sound: true,
+  hints: true,
+  confirmRestart: true
+};
+
+let settings = loadJSON(STORAGE.settings, defaultSettings);
+let records = loadJSON(STORAGE.stats, {
+  played: 0,
+  wins: 0,
+  losses: 0,
+  draws: 0,
+  history: []
+});
+
+let board = [];
+let turn = "red";
+let mode = "ai";
+let difficulty = "normal";
+let selected = null;
+let legalTargets = [];
+let forcedPiece = null;
+let gameOver = false;
+let aiBusy = false;
+let moveNumber = 1;
+let snapshots = [];
+let matchStarted = false;
+let audioContext = null;
+let matchToken = 0;
+
+function loadJSON(key, fallback) {
+  try {
+    const value = localStorage.getItem(key);
+    return value ? {...fallback, ...JSON.parse(value)} : structuredCloneSafe(fallback);
+  } catch {
+    return structuredCloneSafe(fallback);
+  }
+}
+
+function structuredCloneSafe(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function saveSettings() {
+  localStorage.setItem(STORAGE.settings, JSON.stringify(settings));
+}
+
+function saveRecords() {
+  localStorage.setItem(STORAGE.stats, JSON.stringify(records));
+}
+
+function showScreen(id) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  $(id).classList.add("active");
+}
+
+function startGame() {
+  mode = $("homeMode").value;
+  difficulty = $("homeDifficulty").value;
+  matchToken++;
+  turn = "red";
+  selected = null;
+  legalTargets = [];
+  forcedPiece = null;
+  gameOver = false;
+  aiBusy = false;
+  moveNumber = 1;
+  snapshots = [];
+  matchStarted = true;
+  board = createBoard();
+  $("redName").textContent = "Red";
+  $("blackName").textContent = mode === "ai" ? "AI" : "Black";
+  showScreen("game");
+  render();
+  setStatus("Red's turn — choose a piece.");
+  if (mode === "ai") {
+    $("hint").textContent = "You are Red. The AI controls Black.";
+  } else {
+    $("hint").textContent = "Two-player mode: pass the device after each turn.";
+  }
+}
+
+function createBoard() {
   const b = Array.from({length:8}, () => Array(8).fill(null));
-  for (let r=0; r<3; r++)
-    for (let c=0; c<8; c++)
-      if ((r+c)%2===1) b[r][c]={side:"b",king:false};
-
-  for (let r=5; r<8; r++)
-    for (let c=0; c<8; c++)
-      if ((r+c)%2===1) b[r][c]={side:"r",king:false};
-
+  for (let r=0; r<3; r++) {
+    for (let c=0; c<8; c++) {
+      if ((r+c)%2===1) b[r][c] = {color:"black", king:false};
+    }
+  }
+  for (let r=5; r<8; r++) {
+    for (let c=0; c<8; c++) {
+      if ((r+c)%2===1) b[r][c] = {color:"red", king:false};
+    }
+  }
   return b;
+}
+
+function inside(r,c) {
+  return r>=0 && r<8 && c>=0 && c<8;
 }
 
 function cloneBoard(b) {
   return b.map(row => row.map(p => p ? {...p} : null));
 }
 
-function directionsFor(piece) {
-  return piece.king
-    ? [...directions.r, ...directions.b]
-    : directions[piece.side];
+function directions(piece) {
+  if (piece.king) return [[-1,-1],[-1,1],[1,-1],[1,1]];
+  return piece.color === "red" ? [[-1,-1],[-1,1]] : [[1,-1],[1,1]];
 }
 
-function pieceMoves(b, r, c, capturesOnly=false) {
-  const piece = b[r][c];
-  if (!piece) return [];
-  const result = [];
-
-  for (const [dr,dc] of directionsFor(piece)) {
-    const nr=r+dr, nc=c+dc;
-    if (nr<0 || nr>7 || nc<0 || nc>7) continue;
-
-    if (b[nr][nc]) {
-      const jr=nr+dr, jc=nc+dc;
-      if (b[nr][nc].side!==piece.side &&
-          jr>=0 && jr<8 && jc>=0 && jc<8 && !b[jr][jc]) {
-        result.push({r:jr,c:jc,capture:[nr,nc]});
-      }
-    } else if (!capturesOnly) {
-      result.push({r:nr,c:nc,capture:null});
+function getCapturesForPiece(b,r,c) {
+  const p = b[r][c];
+  if (!p) return [];
+  const out = [];
+  for (const [dr,dc] of directions(p)) {
+    const mr = r+dr, mc = c+dc;
+    const tr = r+dr*2, tc = c+dc*2;
+    if (!inside(tr,tc) || !inside(mr,mc)) continue;
+    const middle = b[mr][mc];
+    if (middle && middle.color !== p.color && !b[tr][tc]) {
+      out.push({from:[r,c],to:[tr,tc],capture:[mr,mc]});
     }
   }
-  return result;
+  return out;
 }
 
-function allMoves(b, side) {
-  const captures=[];
-  for(let r=0;r<8;r++) for(let c=0;c<8;c++) {
-    if(b[r][c]?.side===side) {
-      for(const m of pieceMoves(b,r,c,true))
-        captures.push({...m,from:{r,c}});
+function getSimpleMovesForPiece(b,r,c) {
+  const p = b[r][c];
+  if (!p) return [];
+  const out = [];
+  for (const [dr,dc] of directions(p)) {
+    const tr=r+dr, tc=c+dc;
+    if (inside(tr,tc) && !b[tr][tc]) {
+      out.push({from:[r,c],to:[tr,tc],capture:null});
     }
   }
-  if(captures.length) return captures;
-
-  const moves=[];
-  for(let r=0;r<8;r++) for(let c=0;c<8;c++) {
-    if(b[r][c]?.side===side) {
-      for(const m of pieceMoves(b,r,c))
-        moves.push({...m,from:{r,c}});
-    }
-  }
-  return moves;
+  return out;
 }
 
-function saveHistory() {
-  history.push({
-    board:cloneBoard(board),
-    turn, gameOver, halfMoves
+function getAllMoves(b,color,onlyFrom=null) {
+  const captures = [];
+  const simple = [];
+  for (let r=0;r<8;r++) {
+    for (let c=0;c<8;c++) {
+      const p=b[r][c];
+      if (!p || p.color!==color) continue;
+      if (onlyFrom && (onlyFrom[0]!==r || onlyFrom[1]!==c)) continue;
+      captures.push(...getCapturesForPiece(b,r,c));
+      simple.push(...getSimpleMovesForPiece(b,r,c));
+    }
+  }
+  return captures.length ? captures : simple;
+}
+
+function getLegalMovesForTurn() {
+  return getAllMoves(board,turn,forcedPiece);
+}
+
+function saveSnapshot() {
+  snapshots.push({
+    board: cloneBoard(board),
+    turn,
+    moveNumber,
+    forcedPiece: forcedPiece ? [...forcedPiece] : null,
+    gameOver
   });
-  if(history.length>100) history.shift();
+  if (snapshots.length>80) snapshots.shift();
 }
 
-function counts() {
-  let red=0, black=0;
-  for(const row of board) for(const p of row) {
-    if(p?.side==="r") red++;
-    if(p?.side==="b") black++;
+function movePiece(b,move) {
+  const [fr,fc]=move.from;
+  const [tr,tc]=move.to;
+  const p=b[fr][fc];
+  if (!p) return null;
+
+  b[tr][tc]=p;
+  b[fr][fc]=null;
+
+  if (move.capture) {
+    const [cr,cc]=move.capture;
+    b[cr][cc]=null;
   }
-  $("redCount").textContent=red;
-  $("blackCount").textContent=black;
-  $("moveCount").textContent=halfMoves;
+
+  if ((p.color==="red" && tr===0) || (p.color==="black" && tr===7)) {
+    p.king=true;
+  }
+  return p;
 }
 
-function render() {
-  boardEl.innerHTML="";
-  for(let r=0;r<8;r++) for(let c=0;c<8;c++) {
-    const sq=document.createElement("button");
-    sq.type="button";
-    sq.className="square "+((r+c)%2 ? "dark":"light");
-    sq.setAttribute("aria-label",`Row ${r+1}, column ${c+1}`);
+function performMove(move, fromAI=false) {
+  if (gameOver) return;
+  saveSnapshot();
 
-    if(selected?.r===r && selected?.c===c) sq.classList.add("selected");
-    const target=legalTargets.find(m=>m.r===r && m.c===c);
-    if(target) {
-      sq.classList.add("legal");
-      if(target.capture) sq.classList.add("capture");
-    }
-
-    const p=board[r][c];
-    if(p) {
-      sq.setAttribute("aria-label",`Row ${r+1}, column ${c+1}, ${p.side==="r"?"red":"black"} ${p.king?"king":"piece"}`);
-      const piece=document.createElement("span");
-      piece.className="piece "+(p.side==="r"?"red":"black");
-      piece.textContent=p.king?"♛":"";
-      piece.setAttribute("aria-hidden","true");
-      sq.appendChild(piece);
-    }
-
-    sq.addEventListener("click",()=>onSquare(r,c));
-    boardEl.appendChild(sq);
-  }
-
-  $("turnDot").className="dot "+turn;
-  $("turnText").textContent=gameOver
-    ? "MATCH FINISHED"
-    : (turn==="r"?"RED":"BLACK")+"'S TURN";
-  $("modePill").textContent=mode==="ai"?"VS COMPUTER":"TWO PLAYERS";
-  $("undoBtn").disabled=history.length===0 || aiBusy;
-  counts();
-}
-
-function say(text) { messageEl.textContent=text; }
-
-function beep(freq=440,duration=.08) {
-  if(!soundOn) return;
-  try {
-    const C=window.AudioContext||window.webkitAudioContext;
-    if(!C) return;
-    const ctx=new C(), oscillator=ctx.createOscillator();
-    const gain=ctx.createGain();
-    oscillator.frequency.value=freq;
-    gain.gain.value=.035;
-    oscillator.connect(gain); gain.connect(ctx.destination);
-    oscillator.start();
-    gain.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+duration);
-    oscillator.stop(ctx.currentTime+duration);
-    oscillator.onended=()=>ctx.close();
-  } catch(e) {}
-}
-
-function onSquare(r,c) {
-  if(gameOver || aiBusy || (mode==="ai" && turn==="b")) return;
-
-  const piece=board[r][c];
-  if(selected) {
-    const target=legalTargets.find(m=>m.r===r && m.c===c);
-    if(target) { performMove(selected.r,selected.c,target); return; }
-  }
-
-  if(piece?.side===turn &&
-      (!forcedPiece || (forcedPiece.r===r && forcedPiece.c===c))) {
-    const available=forcedPiece
-      ? pieceMoves(board,r,c,true)
-      : allMoves(board,turn).filter(m=>m.from.r===r && m.from.c===c);
-
-    selected={r,c};
-    legalTargets=available;
-    render();
-    say(available.length
-      ? (available.some(m=>m.capture)?"Capture available — choose a highlighted square.":"Choose a highlighted square.")
-      : "That piece has no legal moves.");
-    return;
-  }
-
-  if(!forcedPiece) {
-    selected=null;
-    legalTargets=[];
-    render();
-  }
-}
-
-function performMove(r,c,m) {
-  if(!forcedPiece) saveHistory();
-
-  const piece=board[r][c];
-  board[r][c]=null;
-  board[m.r][m.c]=piece;
-
-  if(m.capture) board[m.capture[0]][m.capture[1]]=null;
-
-  const crowned=!piece.king &&
-    ((piece.side==="r" && m.r===0) ||
-     (piece.side==="b" && m.r===7));
-
-  if(crowned) piece.king=true;
-  halfMoves++;
+  const piece = movePiece(board,move);
+  if (!piece) return;
 
   selected=null;
   legalTargets=[];
+  playSound(move.capture ? "capture" : "move");
 
-  if(m.capture) beep(240,.12);
-  else beep(400,.06);
-  if(crowned) beep(700,.18);
+  if (move.capture) {
+    const [r,c]=move.to;
+    const nextCaptures=getCapturesForPiece(board,r,c);
 
-  // This version crowns a piece immediately and continues a chain
-  // when another capture is available.
-  if(m.capture) {
-    const nextCaptures=pieceMoves(board,m.r,m.c,true);
-    if(nextCaptures.length) {
-      forcedPiece={r:m.r,c:m.c};
-      selected=forcedPiece;
-      legalTargets=nextCaptures;
+    // If this piece can continue jumping, the same player must continue.
+    if (nextCaptures.length) {
+      forcedPiece=[r,c];
       render();
-      say("CHAIN CAPTURE! Jump again with the same piece.");
+      setStatus((turn==="red"?"Red":"Black") + " must continue capturing.");
+      if (mode==="ai" && turn==="black") scheduleAI();
       return;
     }
   }
 
   forcedPiece=null;
-  turn=turn==="r"?"b":"r";
-
-  const remaining=board.flat().filter(p=>p?.side===turn).length;
-  const possible=allMoves(board,turn);
-  if(!remaining || !possible.length) {
-    gameOver=true;
-    const winner=turn==="r"?"BLACK":"RED";
-    say("🏆 "+winner+" WINS THE MATCH!");
-    beep(760,.25);
-  } else {
-    say((turn==="r"?"Red":"Black")+" to move.");
-  }
-
+  turn=turn==="red" ? "black" : "red";
+  moveNumber++;
   render();
-  if(mode==="ai" && turn==="b" && !gameOver) {
-    aiBusy=true;
-    render();
-    say("Computer is thinking…");
-    const token=aiToken;
-    setTimeout(()=>{if(token===aiToken) makeAIMove();},180);
-  }
-}
 
-function simulate(b,m) {
-  const next=cloneBoard(b);
-  const p=next[m.from.r][m.from.c];
-  next[m.from.r][m.from.c]=null;
-  next[m.r][m.c]=p;
-  if(m.capture) next[m.capture[0]][m.capture[1]]=null;
-  if((p.side==="r"&&m.r===0)||(p.side==="b"&&m.r===7)) p.king=true;
-  return next;
-}
-
-function evaluate(b) {
-  let score=0;
-  for(let r=0;r<8;r++) for(let c=0;c<8;c++) {
-    const p=b[r][c];
-    if(!p) continue;
-    let value=p.king?180:100;
-    if(!p.king) value+=(p.side==="b"?r:7-r)*4;
-    if(r>=2&&r<=5&&c>=2&&c<=5) value+=5;
-    score+=p.side==="b"?value:-value;
-  }
-  return score;
-}
-
-function minimax(b,side,depth,alpha,beta) {
-  const moves=allMoves(b,side);
-  if(depth===0 || !moves.length) {
-    if(!moves.length) return side==="b"?-10000-depth:10000+depth;
-    return evaluate(b);
+  const moves=getAllMoves(board,turn);
+  if (!moves.length) {
+    finishGame(turn==="red" ? "black" : "red");
+    return;
   }
 
-  if(side==="b") {
-    let best=-Infinity;
-    for(const m of moves) {
-      best=Math.max(best,minimax(simulate(b,m),"r",depth-1,alpha,beta));
-      alpha=Math.max(alpha,best);
-      if(beta<=alpha) break;
+  setStatus((turn==="red"?"Red":"Black") + "'s turn.");
+  if (mode==="ai" && turn==="black") scheduleAI();
+}
+
+function finishGame(winner) {
+  gameOver=true;
+  aiBusy=false;
+  render();
+  let result;
+  if (mode==="local") {
+    result=winner==="red" ? "Red wins" : "Black wins";
+  } else {
+    result=winner==="red" ? "You win!" : "AI wins";
+  }
+  setStatus("🏆 " + result);
+  $("hint").textContent="Start a new match whenever you're ready.";
+
+  records.played++;
+  if (mode==="ai") {
+    if (winner==="red") records.wins++;
+    else records.losses++;
+  } else {
+    if (winner==="red") records.wins++;
+    else records.losses++;
+  }
+
+  records.history.unshift({
+    result,
+    mode,
+    difficulty: mode==="ai" ? difficulty : "local",
+    date:new Date().toLocaleDateString()
+  });
+  records.history=records.history.slice(0,20);
+  saveRecords();
+}
+
+function setStatus(message) {
+  $("status").innerHTML="<strong>"+escapeHTML(message)+"</strong>";
+}
+
+function escapeHTML(s) {
+  return String(s).replace(/[&<>"']/g,ch=>({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  })[ch]);
+}
+
+function render() {
+  const el=$("board");
+  el.innerHTML="";
+  const moves=getLegalMovesForTurn();
+  const captures=moves.some(m=>m.capture);
+  legalTargets=[];
+
+  if (selected) {
+    legalTargets=moves.filter(m=>m.from[0]===selected[0] && m.from[1]===selected[1]);
+  }
+
+  for (let r=0;r<8;r++) {
+    for (let c=0;c<8;c++) {
+      const sq=document.createElement("button");
+      sq.type="button";
+      sq.className="square "+((r+c)%2 ? "dark":"light");
+      sq.setAttribute("aria-label",`Row ${r+1}, column ${c+1}`);
+
+      if (selected && selected[0]===r && selected[1]===c) {
+        sq.classList.add("selected");
+      }
+
+      const target=legalTargets.find(m=>m.to[0]===r && m.to[1]===c);
+      if (target && settings.hints) {
+        sq.classList.add("target");
+        if (target.capture) sq.classList.add("capture-target");
+      }
+
+      const p=board[r][c];
+      if (p) {
+        const disk=document.createElement("div");
+        disk.className="piece "+p.color+(p.king?" king":"");
+        sq.appendChild(disk);
+      }
+
+      sq.addEventListener("click",()=>handleSquare(r,c));
+      el.appendChild(sq);
     }
-    return best;
   }
 
-  let best=Infinity;
-  for(const m of moves) {
-    best=Math.min(best,minimax(simulate(b,m),"b",depth-1,alpha,beta));
-    beta=Math.min(beta,best);
+  $("redCount").textContent=countPieces("red")+" pieces";
+  $("blackCount").textContent=countPieces("black")+" pieces";
+  $("redPlayer").classList.toggle("active-player",turn==="red"&&!gameOver);
+  $("blackPlayer").classList.toggle("active-player",turn==="black"&&!gameOver);
+  $("undoBtn").disabled=snapshots.length===0 || aiBusy;
+  $("undoBtn").style.opacity=$("undoBtn").disabled?".45":"1";
+  $("soundBtn").textContent=settings.sound?"🔊 Sound":"🔇 Muted";
+}
+
+function countPieces(color) {
+  return board.flat().filter(p=>p && p.color===color).length;
+}
+
+function handleSquare(r,c) {
+  if (gameOver || aiBusy || (mode==="ai" && turn==="black")) return;
+
+  const p=board[r][c];
+  const moves=getLegalMovesForTurn();
+
+  if (selected) {
+    const chosen=moves.find(m=>
+      m.from[0]===selected[0] &&
+      m.from[1]===selected[1] &&
+      m.to[0]===r && m.to[1]===c
+    );
+
+    if (chosen) {
+      performMove(chosen);
+      return;
+    }
+  }
+
+  if (p && p.color===turn) {
+    if (forcedPiece && (forcedPiece[0]!==r || forcedPiece[1]!==c)) {
+      setStatus("Continue jumping with the selected piece.");
+      return;
+    }
+
+    const pieceMoves=moves.filter(m=>m.from[0]===r && m.from[1]===c);
+    if (!pieceMoves.length) {
+      setStatus(moves.some(m=>m.capture)
+        ? "A capture is available. You must capture."
+        : "That piece has no legal move.");
+      selected=null;
+    } else {
+      selected=[r,c];
+      setStatus(pieceMoves.some(m=>m.capture)
+        ? "Capture an opponent's piece!"
+        : (turn==="red"?"Red":"Black") + "'s turn.");
+    }
+  } else {
+    selected=null;
+  }
+  render();
+}
+
+function scheduleAI() {
+  if (gameOver || mode!=="ai" || turn!=="black") return;
+  aiBusy=true;
+  render();
+  setStatus("AI is thinking…");
+  const token=matchToken;
+
+  setTimeout(()=>{
+    if (token!==matchToken || gameOver || turn!=="black") {
+      aiBusy=false;
+      return;
+    }
+
+    // Continue a forced multi-jump before ending the AI's turn.
+    const moves=getAllMoves(board,"black",forcedPiece);
+    if (!moves.length) {
+      aiBusy=false;
+      finishGame("red");
+      return;
+    }
+
+    const move=chooseAIMove(moves);
+    aiBusy=false;
+    if (move) performMove(move,true);
+  },difficulty==="hard"?450:300);
+}
+
+function chooseAIMove(moves) {
+  if (difficulty==="easy") {
+    return moves[Math.floor(Math.random()*moves.length)];
+  }
+
+  const depth=difficulty==="hard"?5:3;
+  let best=-Infinity;
+  let choices=[];
+
+  for (const move of shuffle(moves)) {
+    const next=cloneBoard(board);
+    movePiece(next,move);
+
+    // A capture that can continue is evaluated as a forced same-player turn.
+    const continues=move.capture &&
+      getCapturesForPiece(next,move.to[0],move.to[1]).length>0;
+
+    const score=continues
+      ? search(next,"black",depth,-Infinity,Infinity,move.to,1)
+      : -search(next,"red",depth-1,-Infinity,Infinity,null,1);
+
+    if (score>best) {
+      best=score;
+      choices=[move];
+    } else if (score===best) {
+      choices.push(move);
+    }
+  }
+  return choices[Math.floor(Math.random()*choices.length)] || moves[0];
+}
+
+function shuffle(arr) {
+  const copy=arr.slice();
+  for(let i=copy.length-1;i>0;i--) {
+    const j=Math.floor(Math.random()*(i+1));
+    [copy[i],copy[j]]=[copy[j],copy[i]];
+  }
+  return copy;
+}
+
+function search(b,color,depth,alpha,beta,forced=null,ply=0) {
+  const moves=getAllMoves(b,color,forced);
+  if (!moves.length) return color==="black" ? 10000-ply : -10000+ply;
+  if (depth<=0) return evaluateBoard(b);
+
+  let best=color==="black"?-Infinity:Infinity;
+
+  for(const move of moves) {
+    const next=cloneBoard(b);
+    movePiece(next,move);
+    const keepsTurn=!!(move.capture &&
+      getCapturesForPiece(next,move.to[0],move.to[1]).length);
+
+    const nextColor=keepsTurn ? color : (color==="black"?"red":"black");
+    const nextForced=keepsTurn ? move.to : null;
+    const nextDepth=keepsTurn ? depth : depth-1;
+
+    const score=search(next,nextColor,nextDepth,alpha,beta,nextForced,ply+1);
+
+    if(color==="black") {
+      best=Math.max(best,score);
+      alpha=Math.max(alpha,best);
+    } else {
+      best=Math.min(best,score);
+      beta=Math.min(beta,best);
+    }
     if(beta<=alpha) break;
   }
   return best;
 }
 
-function makeAIMove() {
-  if(gameOver || mode!=="ai" || turn!=="b") {
-    aiBusy=false; render(); return;
+function evaluateBoard(b) {
+  let score=0;
+  for(let r=0;r<8;r++) {
+    for(let c=0;c<8;c++) {
+      const p=b[r][c];
+      if(!p) continue;
+      const value=p.king?180:100;
+      const advance=p.king?0:(p.color==="black"?r:7-r)*3;
+      const center=(c>=2&&c<=5)?3:0;
+      const total=value+advance+center;
+      score+=p.color==="black"?total:-total;
+    }
   }
-  const moves=allMoves(board,"b");
-  if(!moves.length) {
-    gameOver=true; aiBusy=false; render(); say("🏆 RED WINS!"); return;
-  }
-
-  const depth=Number($("difficulty").value);
-  let best=-Infinity, choices=[];
-
-  for(const m of moves) {
-    const value=minimax(simulate(board,m),"r",depth-1,-Infinity,Infinity);
-    if(value>best) { best=value; choices=[m]; }
-    else if(value===best) choices.push(m);
-  }
-
-  const move=choices[Math.floor(Math.random()*choices.length)];
-  aiBusy=false;
-  performMove(move.from.r,move.from.c,move);
+  return score;
 }
 
-function startGame(newMode=mode) {
-  aiToken++;
-  aiBusy=false;
-  mode=newMode;
-  board=makeInitialBoard();
-  turn="r";
-  selected=null;
-  legalTargets=[];
-  forcedPiece=null;
+function undoMove() {
+  if (!snapshots.length || gameOver && !matchStarted) return;
+  if (aiBusy) return;
+
+  // In AI mode, undo both the AI reply and the player's previous move.
+  const steps=mode==="ai" ? Math.min(2,snapshots.length) : 1;
+  let state=null;
+
+  for(let i=0;i<steps;i++) state=snapshots.pop();
+  if (!state) return;
+
+  board=cloneBoard(state.board);
+  turn=state.turn;
+  moveNumber=state.moveNumber;
+  forcedPiece=state.forcedPiece ? [...state.forcedPiece] : null;
   gameOver=false;
-  history=[];
-  halfMoves=0;
-  render();
-  say(mode==="ai"?"You are Red. Beat the computer!":"Two-player mode ready. Red starts.");
-}
-
-$("aiMode").addEventListener("click",()=>{
-  $("aiMode").classList.add("active");
-  $("localMode").classList.remove("active");
-  startGame("ai");
-});
-$("localMode").addEventListener("click",()=>{
-  $("localMode").classList.add("active");
-  $("aiMode").classList.remove("active");
-  startGame("local");
-});
-$("newBtn").addEventListener("click",()=>startGame());
-
-$("undoBtn").addEventListener("click",()=>{
-  if(!history.length || aiBusy) return;
-  aiToken++;
-  const previous=history.pop();
-  board=previous.board;
-  turn=previous.turn;
-  gameOver=previous.gameOver;
-  halfMoves=previous.halfMoves;
   selected=null;
   legalTargets=[];
-  forcedPiece=null;
-
-  // In AI mode, undo both the computer move and the preceding human move
-  // when possible, returning control to the human.
-  if(mode==="ai" && turn==="b" && history.length) {
-    const earlier=history.pop();
-    board=earlier.board;
-    turn=earlier.turn;
-    gameOver=earlier.gameOver;
-    halfMoves=earlier.halfMoves;
-  }
+  aiBusy=false;
   render();
-  say("Move undone.");
-});
+  setStatus((turn==="red"?"Red":"Black")+"'s turn.");
+}
 
+function restartGame() {
+  if (settings.confirmRestart && !confirm("Restart this match?")) return;
+  startGame();
+}
+
+function playSound(type) {
+  if (!settings.sound) return;
+  try {
+    audioContext=audioContext || new (window.AudioContext||window.webkitAudioContext)();
+    if(audioContext.state==="suspended") audioContext.resume();
+    const osc=audioContext.createOscillator();
+    const gain=audioContext.createGain();
+    osc.connect(gain);
+    gain.connect(audioContext.destination);
+    osc.type="sine";
+    osc.frequency.value=type==="capture"?260:420;
+    gain.gain.setValueAtTime(.045,audioContext.currentTime);
+    gain.gain.exponentialRampToValueAtTime(.001,audioContext.currentTime+.09);
+    osc.start();
+    osc.stop(audioContext.currentTime+.1);
+  } catch {}
+}
+
+function updateStats() {
+  $("statPlayed").textContent=records.played;
+  $("statWins").textContent=records.wins;
+  $("statRate").textContent=records.played
+    ? Math.round(records.wins/records.played*100)+"%"
+    : "0%";
+
+  const history=$("history");
+  history.innerHTML="";
+
+  if(!records.history.length) {
+    history.innerHTML='<p class="subtitle">No matches yet. Play your first game!</p>';
+    return;
+  }
+
+  records.history.forEach(item=>{
+    const row=document.createElement("div");
+    row.className="history-item";
+    const result=document.createElement("span");
+    result.textContent=item.result;
+    result.className=item.result.toLowerCase().includes("win")
+      ? "result-win"
+      : item.result.toLowerCase().includes("draw")
+        ? "result-draw":"result-loss";
+
+    const details=document.createElement("small");
+    details.style.color="var(--muted)";
+    details.textContent=`${item.mode==="ai"?"AI":"Local"} · ${item.difficulty} · ${item.date}`;
+
+    row.append(result,details);
+    history.appendChild(row);
+  });
+}
+
+function applySettings() {
+  $("soundToggle").checked=settings.sound;
+  $("hintsToggle").checked=settings.hints;
+  $("confirmToggle").checked=settings.confirmRestart;
+  renderIfGame();
+}
+
+function renderIfGame() {
+  if($("game").classList.contains("active")) render();
+}
+
+$("startBtn").addEventListener("click",startGame);
+$("homeBtn").addEventListener("click",()=>showScreen("home"));
+document.querySelectorAll("[data-home]").forEach(b=>b.addEventListener("click",()=>showScreen("home")));
+$("statsBtn").addEventListener("click",()=>{updateStats();showScreen("stats");});
+$("settingsBtn").addEventListener("click",()=>{applySettings();showScreen("settings");});
+$("restartBtn").addEventListener("click",restartGame);
+$("undoBtn").addEventListener("click",undoMove);
 $("soundBtn").addEventListener("click",()=>{
-  soundOn=!soundOn;
-  $("soundBtn").textContent=soundOn?"🔊 SOUND ON":"🔇 SOUND OFF";
-  if(soundOn) beep();
+  settings.sound=!settings.sound;
+  saveSettings();
+  applySettings();
+});
+$("soundToggle").addEventListener("change",e=>{
+  settings.sound=e.target.checked;
+  saveSettings();
+  applySettings();
+});
+$("hintsToggle").addEventListener("change",e=>{
+  settings.hints=e.target.checked;
+  saveSettings();
+  applySettings();
+});
+$("confirmToggle").addEventListener("change",e=>{
+  settings.confirmRestart=e.target.checked;
+  saveSettings();
+});
+$("clearHistoryBtn").addEventListener("click",()=>{
+  if(confirm("Clear all saved match records?")) {
+    records={played:0,wins:0,losses:0,draws:0,history:[]};
+    saveRecords();
+    updateStats();
+  }
 });
 
-soundOn=true;
-startGame("ai");
+applySettings();
 </script>
 </body>
 </html>
