@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PRO CHECKERS</title>
+
+<style>
+:root {
+  --bg: #10131b;
+  --panel: #1b202c;
+  --gold: #f2c66d;
+  --text: #f5f5f7;
+  --muted: #a7adbb;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  padding: 18px 12px 32px;
+  color: var(--text);
+  background: radial-gradient(ellipse at top, #303547, var(--bg) 65%);
+  font-family: system-ui, Arial, sans-serif;
+}
+.app { max-width: 680px; margin: auto; }
+header { text-align: center; margin: 10px 0 20px; }
+.logo {
+  color: var(--gold);
+  font-size: 12px;
+  letter-spacing: 5px;
+  font-weight: 900;
+}
+h1 { margin: 5px 0; font-size: clamp(28px, 7vw, 43px); }
+.subtitle { color: var(--muted); font-size: 13px; }
+.panel {
+  background: linear-gradient(145deg, #232a39, #171b25);
+  border: 1px solid #343b4c;
+  border-radius: 18px;
+  padding: 14px;
+  margin-bottom: 14px;
+  box-shadow: 0 10px 28px #0003;
+}
+.toolbar { display: flex; gap: 8px; flex-wrap: wrap; }
+button, select {
+  min-height: 44px;
+  border: 1px solid #41495c;
+  border-radius: 10px;
+  background: #292f3e;
+  color: var(--text);
+  padding: 10px 13px;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+button:focus-visible, select:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 2px;
+}
+button.active, button.primary {
+  background: var(--gold);
+  color: #211a0d;
+  border-color: var(--gold);
+  font-weight: 800;
+}
+button:disabled { opacity: .4; cursor: not-allowed; }
+.toolbar button { flex: 1; }
+.statusrow {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px; margin-bottom: 12px; flex-wrap: wrap;
+}
+.turn { display: flex; align-items: center; gap: 9px; font-weight: 800; }
+.dot { width: 13px; height: 13px; border-radius: 50%; }
+.dot.red { background: #ef4e58; }
+.dot.black { background: #d8dce4; }
+.pill {
+  border: 1px solid #444c5f;
+  padding: 5px 9px;
+  border-radius: 30px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.board {
+  width: 100%;
+  max-width: 520px;
+  margin: auto;
+  aspect-ratio: 1;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  border: 6px solid #533522;
+  border-radius: 5px;
+  overflow: hidden;
+  box-shadow: 0 14px 30px #0007;
+}
+.square {
+  position: relative;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  min-height: 0;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+}
+.light { background: #e7d3ad; }
+.dark {
+  background: repeating-linear-gradient(
+    135deg, #765039, #765039 5px, #68442f 5px, #68442f 10px
+  );
+}
+.square.selected { box-shadow: inset 0 0 0 4px #ffdf55; }
+.square.legal::after {
+  content: "";
+  width: 24%; height: 24%; border-radius: 50%;
+  background: #d6f7a0; border: 2px solid #42622b;
+  position: absolute; z-index: 1;
+}
+.square.capture::after {
+  width: 43%; height: 43%; background: transparent;
+  border: 3px solid #f5df79;
+}
+.piece {
+  width: 79%; height: 79%;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  position: relative; z-index: 2;
+  font-size: clamp(14px, 4.7vw, 27px);
+  font-weight: 900;
+  border: 2px solid #0008;
+  box-shadow: inset 0 4px 3px #ffffff6b,
+              inset 0 -6px 5px #0009, 0 3px 3px #0008;
+  transition: transform .12s ease;
+}
+.square.selected .piece { transform: scale(1.07); }
+.piece.red {
+  background: radial-gradient(circle at 33% 25%, #ff8c8c, #d32e3b 58%, #791723);
+  color: #fff4df;
+}
+.piece.black {
+  background: radial-gradient(circle at 33% 25%, #777d8b, #303541 55%, #11141b);
+  color: var(--gold);
+}
+.legend {
+  display: flex; justify-content: center; gap: 16px;
+  margin-top: 12px; color: var(--muted); font-size: 12px;
+}
+.legend span { display: flex; align-items: center; gap: 6px; }
+.message {
+  min-height: 24px; text-align: center; margin-top: 12px;
+  color: var(--gold); font-size: 13px; font-weight: 700;
+}
+.stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+.stat {
+  background: #121722; border: 1px solid #343b4c;
+  border-radius: 12px; text-align: center; padding: 12px 5px;
+}
+.stat strong { display: block; font-size: 23px; }
+.stat small { color: var(--muted); font-size: 10px; }
+.sectiontitle { margin: 0 0 11px; font-size: 14px; }
+.options { display: flex; gap: 9px; align-items: center; flex-wrap: wrap; }
+.options label { color: var(--muted); font-size: 12px; }
+.help { color: var(--muted); font-size: 12px; line-height: 1.7; }
+footer { text-align: center; color: #858c9c; font-size: 10px; padding: 12px; }
+@media (max-width: 380px) {
+  body { padding: 10px 7px; }
+  .panel { padding: 10px; }
+  .piece { border-width: 1px; }
+  button { padding: 9px 7px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; }
+}
+</style>
+</head>
+
+<body>
+<div class="app">
+  <header>
+    <div class="logo">STRATEGY • PRECISION • VICTORY</div>
+    <h1>♟ PRO CHECKERS</h1>
+    <div class="subtitle">Think ahead. Make your move. Claim victory.</div>
+  </header>
+
+  <section class="panel">
+    <h2 class="sectiontitle">GAME MODE</h2>
+    <div class="toolbar">
+      <button id="aiMode" class="active">🤖 VS COMPUTER</button>
+      <button id="localMode">👥 TWO PLAYERS</button>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="statusrow">
+      <div class="turn"><span id="turnDot" class="dot red"></span><span id="turnText">RED'S TURN</span></div>
+      <span id="modePill" class="pill">VS COMPUTER</span>
+    </div>
+
+    <div id="board" class="board" aria-label="Checkers board"></div>
+    <div class="legend">
+      <span><i class="dot red"></i> Red</span>
+      <span><i class="dot black"></i> Black</span>
+      <span>♛ King</span>
+    </div>
+    <div id="message" class="message" aria-live="polite">Choose a red piece to begin.</div>
+  </section>
+
+  <section class="panel">
+    <h2 class="sectiontitle">MATCH STATISTICS</h2>
+    <div class="stats">
+      <div class="stat"><strong id="redCount">12</strong><small>RED PIECES</small></div>
+      <div class="stat"><strong id="blackCount">12</strong><small>BLACK PIECES</small></div>
+      <div class="stat"><strong id="moveCount">0</strong><small>HALF-MOVES</small></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2 class="sectiontitle">GAME CONTROLS</h2>
+    <div class="toolbar">
+      <button id="undoBtn">↶ UNDO</button>
+      <button id="newBtn" class="primary">↻ NEW GAME</button>
+      <button id="soundBtn">🔊 SOUND ON</button>
+    </div>
+    <div class="options" style="margin-top:12px">
+      <label for="difficulty">Computer difficulty</label>
+      <select id="difficulty">
+        <option value="1">Easy</option>
+        <option value="3" selected>Normal</option>
+        <option value="5">Hard</option>
+      </select>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2 class="sectiontitle">HOW TO PLAY</h2>
+    <div class="help">
+      • Red moves first. Tap a piece, then a highlighted square.<br>
+      • Pieces move diagonally forward on dark squares.<br>
+      • Captures are mandatory. Jump over an opponent to capture it.<br>
+      • If another capture is available after a jump, continue jumping.<br>
+      • Reach the opposite edge to become a king. Kings can move forward and backward.<br>
+      • Win by capturing all enemy pieces or blocking every legal move.
+    </div>
+  </section>
+  <footer>PRO CHECKERS • BUILT WITH HTML, CSS & JAVASCRIPT</footer>
+</div>
+
+<script>
+"use strict";
+
+const $ = id => document.getElementById(id);
+const boardEl = $("board");
+const messageEl = $("message");
+
+let board, turn, mode, selected, legalTargets, forcedPiece;
+let gameOver, history, halfMoves, soundOn;
+let aiBusy = false;
+let aiToken = 0;
+
+const directions = {
+  r: [[-1,-1],[-1,1]],
+  b: [[1,-1],[1,1]]
+};
+
+function makeInitialBoard() {
+  const b = Array.from({length:8}, () => Array(8).fill(null));
+  for (let r=0; r<3; r++)
+    for (let c=0; c<8; c++)
+      if ((r+c)%2===1) b[r][c]={side:"b",king:false};
+
+  for (let r=5; r<8; r++)
+    for (let c=0; c<8; c++)
+      if ((r+c)%2===1) b[r][c]={side:"r",king:false};
+
+  return b;
+}
+
+function cloneBoard(b) {
+  return b.map(row => row.map(p => p ? {...p} : null));
+}
+
+function directionsFor(piece) {
+  return piece.king
+    ? [...directions.r, ...directions.b]
+    : directions[piece.side];
+}
+
+function pieceMoves(b, r, c, capturesOnly=false) {
+  const piece = b[r][c];
+  if (!piece) return [];
+  const result = [];
+
+  for (const [dr,dc] of directionsFor(piece)) {
+    const nr=r+dr, nc=c+dc;
+    if (nr<0 || nr>7 || nc<0 || nc>7) continue;
+
+    if (b[nr][nc]) {
+      const jr=nr+dr, jc=nc+dc;
+      if (b[nr][nc].side!==piece.side &&
+          jr>=0 && jr<8 && jc>=0 && jc<8 && !b[jr][jc]) {
+        result.push({r:jr,c:jc,capture:[nr,nc]});
+      }
+    } else if (!capturesOnly) {
+      result.push({r:nr,c:nc,capture:null});
+    }
+  }
+  return result;
+}
+
+function allMoves(b, side) {
+  const captures=[];
+  for(let r=0;r<8;r++) for(let c=0;c<8;c++) {
+    if(b[r][c]?.side===side) {
+      for(const m of pieceMoves(b,r,c,true))
+        captures.push({...m,from:{r,c}});
+    }
+  }
+  if(captures.length) return captures;
+
+  const moves=[];
+  for(let r=0;r<8;r++) for(let c=0;c<8;c++) {
+    if(b[r][c]?.side===side) {
+      for(const m of pieceMoves(b,r,c))
+        moves.push({...m,from:{r,c}});
+    }
+  }
+  return moves;
+}
+
+function saveHistory() {
+  history.push({
+    board:cloneBoard(board),
+    turn, gameOver, halfMoves
+  });
+  if(history.length>100) history.shift();
+}
+
+function counts() {
+  let red=0, black=0;
+  for(const row of board) for(const p of row) {
+    if(p?.side==="r") red++;
+    if(p?.side==="b") black++;
+  }
+  $("redCount").textContent=red;
+  $("blackCount").textContent=black;
+  $("moveCount").textContent=halfMoves;
+}
+
+function render() {
+  boardEl.innerHTML="";
+  for(let r=0;r<8;r++) for(let c=0;c<8;c++) {
+    const sq=document.createElement("button");
+    sq.type="button";
+    sq.className="square "+((r+c)%2 ? "dark":"light");
+    sq.setAttribute("aria-label",`Row ${r+1}, column ${c+1}`);
+
+    if(selected?.r===r && selected?.c===c) sq.classList.add("selected");
+    const target=legalTargets.find(m=>m.r===r && m.c===c);
+    if(target) {
+      sq.classList.add("legal");
+      if(target.capture) sq.classList.add("capture");
+    }
+
+    const p=board[r][c];
+    if(p) {
+      sq.setAttribute("aria-label",`Row ${r+1}, column ${c+1}, ${p.side==="r"?"red":"black"} ${p.king?"king":"piece"}`);
+      const piece=document.createElement("span");
+      piece.className="piece "+(p.side==="r"?"red":"black");
+      piece.textContent=p.king?"♛":"";
+      piece.setAttribute("aria-hidden","true");
+      sq.appendChild(piece);
+    }
+
+    sq.addEventListener("click",()=>onSquare(r,c));
+    boardEl.appendChild(sq);
+  }
+
+  $("turnDot").className="dot "+turn;
+  $("turnText").textContent=gameOver
+    ? "MATCH FINISHED"
+    : (turn==="r"?"RED":"BLACK")+"'S TURN";
+  $("modePill").textContent=mode==="ai"?"VS COMPUTER":"TWO PLAYERS";
+  $("undoBtn").disabled=history.length===0 || aiBusy;
+  counts();
+}
+
+function say(text) { messageEl.textContent=text; }
+
+function beep(freq=440,duration=.08) {
+  if(!soundOn) return;
+  try {
+    const C=window.AudioContext||window.webkitAudioContext;
+    if(!C) return;
+    const ctx=new C(), oscillator=ctx.createOscillator();
+    const gain=ctx.createGain();
+    oscillator.frequency.value=freq;
+    gain.gain.value=.035;
+    oscillator.connect(gain); gain.connect(ctx.destination);
+    oscillator.start();
+    gain.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+duration);
+    oscillator.stop(ctx.currentTime+duration);
+    oscillator.onended=()=>ctx.close();
+  } catch(e) {}
+}
+
+function onSquare(r,c) {
+  if(gameOver || aiBusy || (mode==="ai" && turn==="b")) return;
+
+  const piece=board[r][c];
+  if(selected) {
+    const target=legalTargets.find(m=>m.r===r && m.c===c);
+    if(target) { performMove(selected.r,selected.c,target); return; }
+  }
+
+  if(piece?.side===turn &&
+      (!forcedPiece || (forcedPiece.r===r && forcedPiece.c===c))) {
+    const available=forcedPiece
+      ? pieceMoves(board,r,c,true)
+      : allMoves(board,turn).filter(m=>m.from.r===r && m.from.c===c);
+
+    selected={r,c};
+    legalTargets=available;
+    render();
+    say(available.length
+      ? (available.some(m=>m.capture)?"Capture available — choose a highlighted square.":"Choose a highlighted square.")
+      : "That piece has no legal moves.");
+    return;
+  }
+
+  if(!forcedPiece) {
+    selected=null;
+    legalTargets=[];
+    render();
+  }
+}
+
+function performMove(r,c,m) {
+  if(!forcedPiece) saveHistory();
+
+  const piece=board[r][c];
+  board[r][c]=null;
+  board[m.r][m.c]=piece;
+
+  if(m.capture) board[m.capture[0]][m.capture[1]]=null;
+
+  const crowned=!piece.king &&
+    ((piece.side==="r" && m.r===0) ||
+     (piece.side==="b" && m.r===7));
+
+  if(crowned) piece.king=true;
+  halfMoves++;
+
+  selected=null;
+  legalTargets=[];
+
+  if(m.capture) beep(240,.12);
+  else beep(400,.06);
+  if(crowned) beep(700,.18);
+
+  // This version crowns a piece immediately and continues a chain
+  // when another capture is available.
+  if(m.capture) {
+    const nextCaptures=pieceMoves(board,m.r,m.c,true);
+    if(nextCaptures.length) {
+      forcedPiece={r:m.r,c:m.c};
+      selected=forcedPiece;
+      legalTargets=nextCaptures;
+      render();
+      say("CHAIN CAPTURE! Jump again with the same piece.");
+      return;
+    }
+  }
+
+  forcedPiece=null;
+  turn=turn==="r"?"b":"r";
+
+  const remaining=board.flat().filter(p=>p?.side===turn).length;
+  const possible=allMoves(board,turn);
+  if(!remaining || !possible.length) {
+    gameOver=true;
+    const winner=turn==="r"?"BLACK":"RED";
+    say("🏆 "+winner+" WINS THE MATCH!");
+    beep(760,.25);
+  } else {
+    say((turn==="r"?"Red":"Black")+" to move.");
+  }
+
+  render();
+  if(mode==="ai" && turn==="b" && !gameOver) {
+    aiBusy=true;
+    render();
+    say("Computer is thinking…");
+    const token=aiToken;
+    setTimeout(()=>{if(token===aiToken) makeAIMove();},180);
+  }
+}
+
+function simulate(b,m) {
+  const next=cloneBoard(b);
+  const p=next[m.from.r][m.from.c];
+  next[m.from.r][m.from.c]=null;
+  next[m.r][m.c]=p;
+  if(m.capture) next[m.capture[0]][m.capture[1]]=null;
+  if((p.side==="r"&&m.r===0)||(p.side==="b"&&m.r===7)) p.king=true;
+  return next;
+}
+
+function evaluate(b) {
+  let score=0;
+  for(let r=0;r<8;r++) for(let c=0;c<8;c++) {
+    const p=b[r][c];
+    if(!p) continue;
+    let value=p.king?180:100;
+    if(!p.king) value+=(p.side==="b"?r:7-r)*4;
+    if(r>=2&&r<=5&&c>=2&&c<=5) value+=5;
+    score+=p.side==="b"?value:-value;
+  }
+  return score;
+}
+
+function minimax(b,side,depth,alpha,beta) {
+  const moves=allMoves(b,side);
+  if(depth===0 || !moves.length) {
+    if(!moves.length) return side==="b"?-10000-depth:10000+depth;
+    return evaluate(b);
+  }
+
+  if(side==="b") {
+    let best=-Infinity;
+    for(const m of moves) {
+      best=Math.max(best,minimax(simulate(b,m),"r",depth-1,alpha,beta));
+      alpha=Math.max(alpha,best);
+      if(beta<=alpha) break;
+    }
+    return best;
+  }
+
+  let best=Infinity;
+  for(const m of moves) {
+    best=Math.min(best,minimax(simulate(b,m),"b",depth-1,alpha,beta));
+    beta=Math.min(beta,best);
+    if(beta<=alpha) break;
+  }
+  return best;
+}
+
+function makeAIMove() {
+  if(gameOver || mode!=="ai" || turn!=="b") {
+    aiBusy=false; render(); return;
+  }
+  const moves=allMoves(board,"b");
+  if(!moves.length) {
+    gameOver=true; aiBusy=false; render(); say("🏆 RED WINS!"); return;
+  }
+
+  const depth=Number($("difficulty").value);
+  let best=-Infinity, choices=[];
+
+  for(const m of moves) {
+    const value=minimax(simulate(board,m),"r",depth-1,-Infinity,Infinity);
+    if(value>best) { best=value; choices=[m]; }
+    else if(value===best) choices.push(m);
+  }
+
+  const move=choices[Math.floor(Math.random()*choices.length)];
+  aiBusy=false;
+  performMove(move.from.r,move.from.c,move);
+}
+
+function startGame(newMode=mode) {
+  aiToken++;
+  aiBusy=false;
+  mode=newMode;
+  board=makeInitialBoard();
+  turn="r";
+  selected=null;
+  legalTargets=[];
+  forcedPiece=null;
+  gameOver=false;
+  history=[];
+  halfMoves=0;
+  render();
+  say(mode==="ai"?"You are Red. Beat the computer!":"Two-player mode ready. Red starts.");
+}
+
+$("aiMode").addEventListener("click",()=>{
+  $("aiMode").classList.add("active");
+  $("localMode").classList.remove("active");
+  startGame("ai");
+});
+$("localMode").addEventListener("click",()=>{
+  $("localMode").classList.add("active");
+  $("aiMode").classList.remove("active");
+  startGame("local");
+});
+$("newBtn").addEventListener("click",()=>startGame());
+
+$("undoBtn").addEventListener("click",()=>{
+  if(!history.length || aiBusy) return;
+  aiToken++;
+  const previous=history.pop();
+  board=previous.board;
+  turn=previous.turn;
+  gameOver=previous.gameOver;
+  halfMoves=previous.halfMoves;
+  selected=null;
+  legalTargets=[];
+  forcedPiece=null;
+
+  // In AI mode, undo both the computer move and the preceding human move
+  // when possible, returning control to the human.
+  if(mode==="ai" && turn==="b" && history.length) {
+    const earlier=history.pop();
+    board=earlier.board;
+    turn=earlier.turn;
+    gameOver=earlier.gameOver;
+    halfMoves=earlier.halfMoves;
+  }
+  render();
+  say("Move undone.");
+});
+
+$("soundBtn").addEventListener("click",()=>{
+  soundOn=!soundOn;
+  $("soundBtn").textContent=soundOn?"🔊 SOUND ON":"🔇 SOUND OFF";
+  if(soundOn) beep();
+});
+
+soundOn=true;
+startGame("ai");
+</script>
+</body>
+</html>
